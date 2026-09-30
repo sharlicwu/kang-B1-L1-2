@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>康軒 B1 文法互動測驗</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.container {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 720px;
+  padding: 40px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+h1 { text-align: center; color: #4a3f8f; margin-bottom: 8px; font-size: 26px; }
+.subtitle { text-align: center; color: #888; margin-bottom: 28px; font-size: 15px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Home */
+.name-group { margin-bottom: 24px; }
+.name-group label { display: block; font-weight: bold; color: #4a3f8f; margin-bottom: 8px; font-size: 16px; }
+.name-group input {
+  width: 100%; padding: 14px 16px; border: 2px solid #ddd;
+  border-radius: 10px; font-size: 17px; outline: none; transition: .2s;
+}
+.name-group input:focus { border-color: #667eea; }
+.test-btns { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.test-btn {
+  padding: 20px; border: none; border-radius: 12px; cursor: pointer;
+  font-size: 18px; font-weight: bold; color: #fff; transition: .2s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.test-btn small { font-weight: normal; font-size: 13px; opacity: .9; }
+.btn-l1 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.btn-l2 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.test-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+.test-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.hint { text-align:center; color:#c0392b; font-size:14px; margin-top:12px; min-height:18px; }
+
+/* Quiz */
+.quiz-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+.pill { background:#eef0ff; color:#4a3f8f; padding:6px 14px; border-radius:20px; font-size:14px; font-weight:bold; }
+.pill.name { background:#ffeaa7; color:#7a5b00; }
+.progress-wrap { background:#eee; height:8px; border-radius:4px; margin-bottom:22px; overflow:hidden; }
+.progress-bar { background:linear-gradient(90deg,#667eea,#764ba2); height:100%; width:0; transition:.35s; }
+.q-text { font-size:18px; color:#333; line-height:1.7; margin-bottom:20px; background:#f8f9ff; padding:16px; border-radius:12px; border-left:5px solid #667eea; white-space:pre-wrap; }
+.options { display:flex; flex-direction:column; gap:10px; }
+.opt {
+  padding:14px 16px; border:2px solid #ddd; border-radius:10px;
+  background:#fff; cursor:pointer; font-size:16px; text-align:left;
+  transition:.15s; display:flex; align-items:flex-start; gap:10px; line-height:1.5;
+}
+.opt:hover:not(:disabled) { border-color:#667eea; background:#f0f2ff; }
+.opt:disabled { cursor:default; }
+.opt .key { font-weight:bold; color:#667eea; flex-shrink:0; }
+.opt.correct { background:#d4edda; border-color:#28a745; animation: pop .3s; }
+.opt.wrong { background:#f8d7da; border-color:#dc3545; }
+.opt.reveal { background:#d4edda; border-color:#28a745; box-shadow:0 0 0 2px #28a745 inset; }
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.03)} 100%{transform:scale(1)} }
+
+.feedback { margin-top:18px; padding:16px; border-radius:12px; display:none; line-height:1.7; font-size:15px; }
+.feedback.show { display:block; animation: slideIn .3s; }
+@keyframes slideIn { from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none} }
+.feedback.ok { background:#d4edda; border:1px solid #28a745; color:#155724; }
+.feedback.ng { background:#f8d7da; border:1px solid #dc3545; color:#721c24; }
+.feedback .verdict { font-weight:bold; font-size:17px; margin-bottom:6px; }
+.feedback .ans-line { font-weight:bold; margin-top:8px; }
+.feedback .expl { margin-top:8px; padding-top:8px; border-top:1px dashed rgba(0,0,0,.2); }
+.next-btn {
+  margin-top:16px; width:100%; padding:14px; border:none; border-radius:10px;
+  background:linear-gradient(135deg,#667eea,#764ba2); color:#fff;
+  font-size:17px; font-weight:bold; cursor:pointer; display:none;
+}
+.next-btn:hover { opacity:.9; }
+.auto-hint { text-align:center; color:#888; font-size:13px; margin-top:12px; display:none; }
+
+/* Result */
+.result-head { text-align:center; margin-bottom:24px; }
+.score-ring {
+  width:150px; height:150px; border-radius:50%; margin:0 auto 14px;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  background: conic-gradient(#28a745 0%, #eee 0%);
+  position:relative;
+}
+.score-ring::before { content:""; position:absolute; inset:12px; background:#fff; border-radius:50%; }
+.score-ring .inner { position:relative; z-index:1; }
+.score-ring .num { font-size:36px; font-weight:bold; color:#4a3f8f; }
+.score-ring .lbl { font-size:13px; color:#888; }
+.result-title { font-size:22px; color:#4a3f8f; font-weight:bold; }
+.result-meta { color:#666; margin-top:4px; font-size:15px; }
+.stat-row { display:flex; gap:10px; margin-bottom:20px; }
+.stat {
+  flex:1; text-align:center; padding:14px 6px; border-radius:12px; font-size:14px;
+}
+.stat b { display:block; font-size:24px; margin-bottom:2px; }
+.stat.ok { background:#d4edda; color:#155724; }
+.stat.ng { background:#f8d7da; color:#721c24; }
+.stat.pt { background:#eef0ff; color:#4a3f8f; }
+.review-title { font-weight:bold; color:#4a3f8f; margin:18px 0 10px; font-size:16px; }
+.review-item {
+  border:1px solid #eee; border-left:4px solid #dc3545; border-radius:8px;
+  padding:12px; margin-bottom:10px; font-size:14px; background:#fffafa;
+}
+.review-item .rq { font-weight:bold; color:#333; margin-bottom:6px; line-height:1.5; }
+.review-item .ra { color:#28a745; font-weight:bold; }
+.review-item .ry { color:#dc3545; font-weight:bold; }
+.review-item .re { color:#666; margin-top:6px; line-height:1.6; }
+.review-ok { border-left-color:#28a745; background:#fafffc; }
+.all-right { background:#d4edda; border:1px solid #28a745; color:#155724; padding:16px; border-radius:12px; text-align:center; font-weight:bold; }
+.home-btn {
+  margin-top:18px; width:100%; padding:14px; border:2px solid #667eea; border-radius:10px;
+  background:#fff; color:#667eea; font-size:16px; font-weight:bold; cursor:pointer;
+}
+.home-btn:hover { background:#f0f2ff; }
+@media (max-width:520px){ .container{padding:22px} .q-text{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <h1>康軒 B1 文法互動測驗</h1>
+    <div class="subtitle">Grammar Test &mdash; L1 &amp; L2 各 25 題選擇題</div>
+    <div class="name-group">
+      <label>請輸入你的英文名字 (English Name)</label>
+      <input type="text" id="nameInput" placeholder="例如：Andy" autocomplete="off">
+    </div>
+    <div class="test-btns">
+      <button class="test-btn btn-l1" onclick="startTest('L1')">
+        <span>第一課文法</span><small>L1 Grammar &middot; 25 題</small>
+      </button>
+      <button class="test-btn btn-l2" onclick="startTest('L2')">
+        <span>第二課文法</span><small>L2 Grammar &middot; 25 題</small>
+      </button>
+    </div>
+    <div class="hint" id="homeHint"></div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-top">
+      <span class="pill name" id="quizName">--</span>
+      <span class="pill" id="quizLabel">--</span>
+      <span class="pill" id="quizCount">1 / 25</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="optionsBox"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">下一題 &rarr;</button>
+    <div class="auto-hint" id="autoHint">答對！1 秒後自動跳到下一題...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="result-head">
+      <div class="score-ring" id="scoreRing"><div class="inner"><div class="num" id="scoreNum">0</div><div class="lbl" id="scoreLbl">0 / 25</div></div></div>
+      <div class="result-title" id="resultTitle">測驗完成！</div>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat ok"><b id="statOk">0</b>答對</div>
+      <div class="stat ng"><b id="statNg">0</b>答錯</div>
+      <div class="stat pt"><b id="statPt">0</b>得分</div>
+    </div>
+    <div id="reviewBox"></div>
+    <button class="home-btn" onclick="goHome()">回首頁 / 換一份測驗</button>
+  </div>
+
+</div>
+
+<script>
+const DATA = {
+L1: {
+  label: "第一課文法 L1",
+  questions: [
+    {q:"A：Are they powerful computers?\nB：Yes, ＿＿＿.",o:["we are","they are","I am","you are"],a:1,
+     e:"問句主詞是 they（它們），肯定簡答要用 they are。答句主詞必須與問句一致，所以選 (B)。"},
+    {q:"A：What are those?\nB：Those are ＿＿＿.",o:["puppy","a puppy","puppies","puppies'"],a:2,
+     e:"those（那些）是複數，後面的名詞也要用複數 puppies（小狗們）。(A)(B) 是單數，(D) puppies' 是所有格（小狗們的），此處不需要所有格。"},
+    {q:"This camera is my gift（禮物）. ＿＿＿ is great.",o:["They","It","These","Those"],a:1,
+     e:"前面主詞是 this camera（這台相機），單數、非人，代替它的代名詞用 It。They/These/Those 都是複數，不合。"},
+    {q:"A：What ＿＿＿ those?\nB：They're posters.",o:["are","am","is","be"],a:0,
+     e:"those 是複數指示代名詞，be 動詞用 are。am 只配 I，is 配單數，be 為原形動詞不能直接放這裡。"},
+    {q:"A：＿＿＿ are those?\nB：They are Linda's new computers. They are powerful!",o:["What","When","How","Where"],a:0,
+     e:"答句說「它們是 Linda 的新電腦」，是在回答「東西是什麼」，用 What。When 問時間、How 問方式、Where 問地點，都不合。"},
+    {q:"These are ＿＿＿ photos.",o:["the boy","the boy's","the boys","a boy"],a:1,
+     e:"照片要屬於某人才用所有格。the boy's（那個男孩的）是有 's 的名詞所有格，可修飾 photos。(C) the boys 少了所有格符號，語意不通。"},
+    {q:"A：Are those pictures beautiful?\nB：Yes, ＿＿＿.",o:["it isn't","it is","they aren't","they are"],a:3,
+     e:"問句是 Are those pictures...（複數），肯定簡答用 they are。注意 Yes 不能接否定的 (A)(C)，(B) it is 是單數也不合。"},
+    {q:"A：＿＿＿ those your photos?\nB：Yes, they are.",o:["Be","Is","Are","Am"],a:2,
+     e:"those 是複數，疑問句用 Are 開頭。Is 配單數、Am 配 I、Be 是原形動詞不能直接放句首。"},
+    {q:"A：Are those pencil boxes?\nB：No, they aren't. They are ＿＿＿.",o:["a computer","computers","computer's","pencil boxes"],a:1,
+     e:"答句說「不，它們不是」，所以後面要換成另一樣東西。computers 是複數、與 They are 搭配正確。(A) 單數不搭；(C) 所有格不合；(D) 又說回 pencil boxes 會自相矛盾。"},
+    {q:"Steve：Are those radios?\nKelly：Yes, ＿＿＿ are.",o:["they","those","this","it"],a:0,
+     e:"肯定簡答句要用代名詞，those 的代名詞是 they：Yes, they are. (B) those 是指示代名詞不能當簡答主詞，(C)(D) 單數不合。"},
+    {q:"A：Are the girls' posters great?\nB：Yes, they are. But something ＿＿＿ wrong.",o:["is","are","it","am"],a:0,
+     e:"something（某事）是單數主詞，be 動詞用 is。無生命單數主詞一律用 is，不受後面 and/or 影響。"},
+    {q:"Bernice：What are these?\nWinnie：＿＿＿ the actor's new posters.",o:["They aren't","This is","That are","They are"],a:3,
+     e:"these 是複數，回答要用 They are。（此題問「這些是什麼」，回答應是肯定的「它們是…」，(A) 否定不合語境。）"},
+    {q:"A：Are ＿＿＿ boys your friends?\nB：Yes, they are.",o:["this","that","they","these"],a:3,
+     e:"boys 是複數，前面的指示形容詞用 these（這些）。this/that 是單數，they 是代名詞不能直接放在名詞前。"},
+    {q:"A：What are these?\nB：＿＿＿ great cellphones.",o:["You are","They are","I am","She is"],a:1,
+     e:"these 是複數，回答用 They are。其他選項主詞與 these 不一致。"},
+    {q:"A：Is that girl cute?\nB：Yes, ＿＿＿.",o:["they are","she is","you are","he is"],a:1,
+     e:"that girl（那個女孩）是單數女性，代名詞用 she，簡答 she is。"},
+    {q:"A：They are ＿＿＿ photos.\nB：Really? They're cool!",o:["Peter","Peter's","a Peter","the Peter"],a:1,
+     e:"照片屬於 Peter，要用名詞所有格 Peter's（Peter 的）。(A) 沒有所有格符號；(C)(D) 專有名詞前不加 a/the。"},
+    {q:"A：Are those men tall and young?\nB：Yes, ＿＿＿.",o:["they are","they aren't","they are tall and old","they are short and old"],a:0,
+     e:"Yes 是肯定簡答，直接用 they are 即可。(C)(D) 多加了與問句不符的資訊（old/short），(B) 是否定，與 Yes 矛盾。"},
+    {q:"A：Are ＿＿＿ famous（有名的）?\nB：Yes, they are.",o:["this girl","these girls","that girl","it"],a:1,
+     e:"答句是 they are（複數），所以問句主詞也要是複數：these girls。this girl/that girl 是單數，it 不是指人。"},
+    {q:"A：What are these?\nB：They are the two ＿＿＿ schoolbags.",o:["girls","girl's","girls'","girl"],a:2,
+     e:"「那兩個女孩的書包」— 兩個女孩 → 複數所有格 girls'（女孩們的）。(B) girl's 是單數所有格，(A) 沒有所有格符號。"},
+    {q:"A：＿＿＿ it the artist's（藝術家）photo?\nB：Yes, it ＿＿＿.",o:["Is; is","Isn't; isn't","Are; aren't","Are; are"],a:0,
+     e:"主詞 it 是單數，問句用 Is，簡答 Yes, it is。兩空都要單數且肯定，只有 (A) 符合。"},
+    {q:"These are Charlie's photos. ＿＿＿ they cool?",o:["Is","Am","Isn't","Are"],a:3,
+     e:"代名詞 they 是複數，疑問句用 Are。Is/Am 配單數，Isn't 是否定、與語意不符。"},
+    {q:"A：Are those your new videos? They are cool!\nB：No, they aren't. They are ＿＿＿ new videos.",o:["my","she","Jack's","those"],a:2,
+     e:"「Are those YOUR videos?」的 your 指 B，B 說「不，不是我的」，接著應說是「別人的」。(A) my 會自相矛盾（不是我的→是我的）；(B) she 是主格不能修飾名詞；(D) those 語意重複。Jack's（Jack 的）正確。"},
+    {q:"A：Who is those ＿＿＿ teacher?\nB：Ms. Chang.",o:["boy","boys","boy's","boys'"],a:3,
+     e:"those 是複數，指「那些男孩的老師」→ 複數所有格 boys'。（題幹的 is 應為 are，但依複數 those 判斷所有格用 boys'。）"},
+    {q:"A：Are they your favorite writers（作家）?\nB：Yes, ＿＿＿.",o:["you are","we are","they are","they're"],a:2,
+     e:"問句主詞是 they，肯定簡答用完整形式 they are（測驗題簡答句用完整形式，不用縮寫 they're）。you/we 與問句主詞不一致。"},
+    {q:"A：What are those?\nB：They're ＿＿＿.",o:["the teacher's books","teacher","the teacher's book","a teacher's book"],a:0,
+     e:"those 與 They're 都是複數，後面名詞必須是複數 books。(C)(D) 是單數 book，(B) teacher 沒有冠詞與所有格，不合。"}
+  ]
+},
+L2: {
+  label: "第二課文法 L2",
+  questions: [
+    {q:"Those ＿＿＿ Terry's birthday gifts.",o:["is","are","be","an"],a:1,
+     e:"Those（那些）是複數，be 動詞用 are。is 配單數、be 是原形動詞、an 是冠詞，皆不合。"},
+    {q:"Look! That ＿＿＿ Ken's new pet.",o:["am","is","are","be"],a:1,
+     e:"That（那個）是單數，be 動詞用 is。am 配 I，are 配複數，be 是原形。"},
+    {q:"This book is a gift for Peter. ＿＿＿ is great.",o:["They","It","These","Those"],a:1,
+     e:"前面主詞 this book 單數，代替它的代名詞是 It。其他皆為複數。"},
+    {q:"These are ＿＿＿ photos.",o:["the boy","the boys'","the boys","a boy"],a:1,
+     e:"These 是複數，「男孩們的照片」→ 複數所有格 the boys'。(A)(D) 單數；(C) the boys 沒有所有格符號。"},
+    {q:"A：＿＿＿ is that?\nB：It's my robot.",o:["Where","How","What","Who"],a:2,
+     e:"答句 It's my robot（是我的機器人）在講「東西」，用 What 問。Where 問地點、How 問方式、Who 問人。"},
+    {q:"＿＿＿ this picture, Mr. Lin looks happy.",o:["On","In","At","For"],a:1,
+     e:"「在這張照片中」固定用 In this picture。on 表「在…上面」，at 表「在某點」，for 表「為了」。"},
+    {q:"We are brother and sister. Mr. and Mrs. Stone are ＿＿＿ mom and dad.",o:["her","his","our","their"],a:2,
+     e:"前面說「We are brother and sister」（我們是兄妹），Stone 夫婦是「我們的」爸媽 → our。(D) their 是「他們的」，與 We 不一致。"},
+    {q:"A：This is my brother, Jack. And ＿＿＿ is my sister, Ariel.\nB：Nice to meet you, Jack and Ariel.",o:["these","he","that","those"],a:2,
+     e:"介紹單數的人且與前面 This is 平行 → And that is my sister. these/those 是複數，he 用來指男生，Ariel 是女生。"},
+    {q:"A：＿＿＿ are those?\nB：They are my new shoes.",o:["Who","How","Where","What"],a:3,
+     e:"答句 my new shoes 是「東西」，用 What 問。Who 問人、Where 問地點、How 問方式。"},
+    {q:"Sue：Your hat looks so comfortable!\nAnn：It's more than comfortable. If you wear a hat like ＿＿＿, you won't feel cold on a windy day.【98-1基測】",o:["I","myself","one","this"],a:3,
+     e:"like this = 像這頂（帽子），指目前戴的這頂。(A) I 是主格、需用 like me；(B) myself 反身代名詞不合；(C) one 代替同類名詞，此處不需要。"},
+    {q:"A：Are ＿＿＿ scary?\nB：Yes, they are.",o:["this tiger","these tigers","that tiger","the tiger"],a:1,
+     e:"答句 they are 是複數 → 問句主詞也要複數：these tigers。其餘皆單數。"},
+    {q:"Elsa：Did Eric buy any vegetables in the market?\nBob：No, he didn't, but he bought ＿＿＿ fish.【92-1基測】",o:["no","any","some","both"],a:2,
+     e:"but 表轉折：沒買蔬菜，「但是」買了「一些」魚 → some fish。any 用於否定/疑問句；no 接名詞會變成完全否定，與 but 矛盾。"},
+    {q:"A：＿＿＿ those students' names?\nB：The girl is Rita. The tall boy is Hank, and the short boy is Tom.",o:["What is","What are","Are","Are they"],a:1,
+     e:"names 是複數，be 動詞用 are，且問句需有疑問詞 → What are。(A) What is 單數不搭；(C)(D) 沒有疑問詞，答句不會是人名。"},
+    {q:"A：＿＿＿ are those, Tina?\nB：They're my cousin's ＿＿＿.",o:["What; pictures","Where; birthday","Who; parent","What; pet"],a:0,
+     e:"答句 They're 是複數，第二空需複數名詞 pictures。(B) birthday、(C) parent、(D) pet 都是單數，與 They're 矛盾；Where 問地點不合語境。"},
+    {q:"A：Are ＿＿＿ your friends?\nB：Yes, ＿＿＿ are.",o:["this; they","this; these","these; these","these; they"],a:3,
+     e:"friends 複數 → 用 these；簡答句主詞用代名詞 they → Yes, they are。(C) Yes, these are 不是標準簡答句。"},
+    {q:"A：Is that your T-shirt?\nB：Yes, ＿＿＿.",o:["I am","it is","I'm not","it isn't"],a:1,
+     e:"問句主詞 that（單數事物），簡答用 it is。I am 回答 Are you...?；(C)(D) 否定，與 Yes 矛盾。"},
+    {q:"Linda and Peter ＿＿＿ students. ＿＿＿ uniforms（制服）are blue.",o:["are; They're","are; Their","is; Her","is; His"],a:1,
+     e:"Linda and Peter 是兩人 → are；後面空格在名詞 uniforms 前 → 所有格形容詞 Their。(A) They're = They are，放名詞前文法錯誤。"},
+    {q:"A：＿＿＿ Alex and Diana's husband young?\nB：Yes, ＿＿＿.",o:["Is; he is","Are; they are","Is; he's","Are; they're"],a:0,
+     e:"「Alex and Diana's husband」是共同所有格（兩人共有一位 husband），視為一個單數主詞 → Is；簡答用完整形式 he is（不用縮寫 he's）。"},
+    {q:"＿＿＿ are good students. We all（全部）have good teachers, too.",o:["We, you, and they","You, they, and we","We, they, and you","They, we, and you"],a:1,
+     e:"褒揚別人（說好話）時，代名詞順序為「你 → 他 → 我」（第二、第三人稱在前，自己放最後表示客氣）→ You, they, and we。選項 (A)(C)(D) 順序都不符合客氣排列規則。"},
+    {q:"A：＿＿＿ Eason and Gary's wife old?\nB：No, ＿＿＿.",o:["Is; she's young","Isn't; she's old","Are; they're old","Aren't; they're young"],a:0,
+     e:"「Eason and Gary's wife」是共同所有格 → 單數 → Is；答句 No 表否定，(A) No, she's young（不，她很年輕）前後一致。(B) Isn't 開頭的疑問句用 No 回答後又說 she's old 自相矛盾；(C)(D) 用複數與單數 wife 不符。"},
+    {q:"＿＿＿ schools are new and big.",o:["Joe and Gina's","Joe","Joe and Gina","Joe's and Gina's"],a:3,
+     e:"schools 是複數，且要表達「兩人各自的學校」→ 分別所有格 Joe's and Gina's。(A) Joe and Gina's 是共同所有格，通常接單數名詞（一所共同的學校），與複數 schools 的「各自」語意不符；(B)(C) 沒有所有格。"},
+    {q:"A：＿＿＿ your favorite ＿＿＿?\nB：Yes, their singing（演唱）is beautiful. A：Their feathers（羽毛）are beautiful, too.",o:["Is this; bird","Is she; bird","Are we; birds","Are these; birds"],a:3,
+     e:"答句 their（複數）+ feathers（羽毛，指鳥）→ 問句需複數 birds，且用 Are these 詢問「這些是…嗎」。(A)(B) bird 單數與 their 矛盾；(C) Are we 語意不通。"},
+    {q:"A：＿＿＿ Cindy's and Jane's pets?\nB：Yes. They have two cats and three dogs.",o:["Are you","Are they","Is it","Is that"],a:1,
+     e:"pets 是複數，答句 They have 也用複數 → 問句用 Are they。you/is it/is that 與複數 pets 不一致。"},
+    {q:"A：＿＿＿ Julia and Ted's mom actresses（女演員）?\nB：Yes. And Happy Sunday is Julia's new movie（電影）.",o:["Is","Am","Are","Be"],a:0,
+     e:"「Julia and Ted's mom」是共同所有格（兄妹倆共有一位媽媽）→ 單數主詞 → 用 Is。（共同所有格 A and B's + 單數名詞 = 一個人，動詞用單數。）"},
+    {q:"A：Is ＿＿＿ Thomas?\nB：Which one（哪一個）?\nA：＿＿＿ man with glasses（眼鏡）. The tall one.",o:["that; The","the; The","it; A","who; A"],a:0,
+     e:"指遠處/確認某人用 Is that Thomas?；後面回答是特指「那位戴眼鏡的」→ The man with glasses。(B) the Thomas 專有名詞前不加 the；(C) a man 不定冠詞與 The tall one 矛盾；(D) who 疑問詞放此處不通。"}
+  ]
+}
+};
+
+let currentTest = null;
+let qIndex = 0;
+let studentName = "";
+let records = [];   // {qi, chosen, correct}
+let locked = false;
+let autoTimer = null;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startTest(test){
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){
+    document.getElementById('homeHint').textContent = "請先輸入英文名字再開始測驗！";
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  document.getElementById('homeHint').textContent = "";
+  studentName = name;
+  currentTest = test;
+  qIndex = 0;
+  records = [];
+  locked = false;
+  clearTimeout(autoTimer);
+  document.getElementById('quizName').textContent = "Hi, " + name;
+  document.getElementById('quizLabel').textContent = DATA[test].label;
+  show('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  locked = false;
+  clearTimeout(autoTimer);
+  const qs = DATA[currentTest].questions;
+  const item = qs[qIndex];
+  document.getElementById('quizCount').textContent = (qIndex+1) + " / " + qs.length;
+  document.getElementById('progressBar').style.width = (qIndex/qs.length*100) + "%";
+  document.getElementById('qText').textContent = item.q;
+
+  const box = document.getElementById('optionsBox');
+  box.innerHTML = "";
+  const keys = ["A","B","C","D"];
+  item.o.forEach((text,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = '<span class="key">('+keys[i]+')</span><span>'+escapeHtml(text)+'</span>';
+    btn.onclick = ()=>choose(i, btn);
+    box.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.innerHTML = "";
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('autoHint').style.display = 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function choose(i, btn){
+  if(locked) return;
+  locked = true;
+  const qs = DATA[currentTest].questions;
+  const item = qs[qIndex];
+  const correct = (i === item.a);
+  records.push({qi:qIndex, chosen:i, correct:correct});
+
+  const btns = document.querySelectorAll('#optionsBox .opt');
+  btns.forEach(b=>b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  if(correct){
+    btn.classList.add('correct');
+    fb.className = 'feedback ok show';
+    fb.innerHTML = '<div class="verdict">&#9989; 答對了！</div>' +
+                   '<div class="ans-line">正確答案：('+["A","B","C","D"][item.a]+') '+escapeHtml(item.o[item.a])+'</div>';
+    document.getElementById('autoHint').style.display = 'block';
+    autoTimer = setTimeout(()=>{ nextQuestion(); }, 1000);
+  } else {
+    btn.classList.add('wrong');
+    btns[item.a].classList.add('reveal');
+    fb.className = 'feedback ng show';
+    fb.innerHTML = '<div class="verdict">&#10060; 答錯了</div>' +
+                   '<div class="ans-line">正確答案：('+["A","B","C","D"][item.a]+') '+escapeHtml(item.o[item.a])+'</div>' +
+                   '<div class="expl"><b>解析：</b>'+escapeHtml(item.e)+'</div>';
+    document.getElementById('nextBtn').style.display = 'block';
+  }
+}
+
+function nextQuestion(){
+  clearTimeout(autoTimer);
+  const qs = DATA[currentTest].questions;
+  qIndex++;
+  if(qIndex >= qs.length){
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult(){
+  const qs = DATA[currentTest].questions;
+  const total = qs.length;
+  const ok = records.filter(r=>r.correct).length;
+  const ng = total - ok;
+  const score = ok * 4;   // 每題4分
+  const pct = Math.round(ok/total*100);
+
+  document.getElementById('progressBar').style.width = "100%";
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreLbl').textContent = ok + " / " + total;
+  document.getElementById('scoreRing').style.background =
+    "conic-gradient(#28a745 " + pct + "%, #eee " + pct + "%)";
+  document.getElementById('statOk').textContent = ok;
+  document.getElementById('statNg').textContent = ng;
+  document.getElementById('statPt').textContent = score;
+
+  let title = "測驗完成！";
+  if(pct === 100) title = "&#127942; 滿分！太優秀了！";
+  else if(pct >= 80) title = "&#128170; 非常棒！";
+  else if(pct >= 60) title = "&#128218; 不錯，再加強一下！";
+  else title = "&#128214; 要多練習喔！";
+  document.getElementById('resultTitle').innerHTML = title;
+  document.getElementById('resultMeta').innerHTML =
+    DATA[currentTest].label + " ｜ " + escapeHtml(studentName) + " ｜ 正確率 " + pct + "%";
+
+  const rb = document.getElementById('reviewBox');
+  if(ng === 0){
+    rb.innerHTML = '<div class="all-right">&#9989; 全部 '+total+' 題都答對了，沒有需要複習的題目！</div>';
+  } else {
+    let html = '<div class="review-title">錯題複習（共 '+ng+' 題）</div>';
+    records.forEach(r=>{
+      const item = qs[r.qi];
+      if(r.correct) return;
+      html += '<div class="review-item">' +
+        '<div class="rq">Q'+(r.qi+1)+'. '+escapeHtml(item.q).replace(/\n/g,'<br>')+'</div>' +
+        '<div>你的答案：<span class="ry">('+["A","B","C","D"][r.chosen]+') '+escapeHtml(item.o[r.chosen])+'</span></div>' +
+        '<div class="ra">正確答案：('+["A","B","C","D"][item.a]+') '+escapeHtml(item.o[item.a])+'</div>' +
+        '<div class="re"><b>解析：</b>'+escapeHtml(item.e)+'</div>' +
+      '</div>';
+    });
+    rb.innerHTML = html;
+  }
+  show('screen-result');
+}
+
+function goHome(){
+  clearTimeout(autoTimer);
+  show('screen-home');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('nameInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){
+    const btns = document.querySelectorAll('.test-btn:not(:disabled)');
+    if(btns.length) startTest('L1');
+  }
+});
+</script>
+</body>
+</html>
